@@ -15,9 +15,12 @@ so a license cannot be copied to another device.
 ## Layout
 
 ```
+api/
+  index.py               Vercel serverless function (Flask): hosted generator
+packs.json               Public pack metadata (pack IDs, song counts, sizes)
 tools/
   enclib_license.py      CLI engine (keygen / issue / inspect / selftest)
-  enclib_license_web.py  Local-only web UI (thin wrapper around the CLI)
+  main.py                Local-only web UI (thin wrapper around the CLI)
   ENCLIB_LICENSE.md      Full manual: setup, issuing, revocation, security
   keys/                  Signing private key (git-ignored, never committed)
 ```
@@ -37,10 +40,33 @@ tools/
 2. Put `.enclib` packs and passphrase-only `.txt` files in `test-output/`
    (or point `--pack-dir` / `--passphrase-dir` elsewhere).
 
-## Issue a license (web UI)
+## Hosted generator (Vercel)
+
+`api/index.py` serves the same license UI at
+https://encore-license-generator.vercel.app, so testers can be issued licenses
+without access to this machine. The private key, passphrases, and admin token
+live only in Vercel's encrypted environment variables:
+
+| Variable | Purpose |
+|---|---|
+| `ENCLIB_SIGNING_KEY` | PEM text of the signing private key |
+| `ENCLIB_ADMIN_TOKEN` | Gates `POST /api/issue` (constant-time compared) |
+| `ENCLIB_PASSPHRASE_<NAME>` | One per passphrase listed in `packs.json` |
+
+`packs.json` carries only public metadata read from the `.enclib` headers
+(pack ID, song count, size); the function fabricates an 80-byte header stub
+per request, so real pack binaries never touch the server. Deploy with
+`npx vercel --prod`; `.vercelignore` keeps keys and local test data out of
+deployments. Verified end-to-end against a real device (activation code ->
+serverless signing -> Android Keystore unwrap, 2026-10-30).
+
+To rotate the admin token: `npx vercel env add ENCLIB_ADMIN_TOKEN production`,
+then redeploy — no code changes.
+
+## Issue a license (web UI, local)
 
 ```
-python tools/enclib_license_web.py
+python tools/main.py
 ```
 
 Opens `http://127.0.0.1:8765` in your browser. Binds to localhost only; the
@@ -59,4 +85,6 @@ python tools/enclib_license.py issue --activation ENCLIB-ACT-1:... --pack test-o
 python tools/enclib_license.py selftest
 ```
 
-Requires Python 3.10+ (uses `datetime.UTC`). No third-party dependencies.
+Requires Python 3.10+ (uses `datetime.UTC`). No third-party dependencies for
+the CLI and local UI; the hosted function needs Flask + cryptography (see
+`requirements.txt`).
