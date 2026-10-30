@@ -1,0 +1,21 @@
+# Private signing key and local secrets. This MUST be here before any commit.
+tools/keys/
+*.pem
+*.keystore
+keystore.properties
+
+# Local working data (packs, passphrases, issued licenses, device tests)
+test-output/
+device-test-*/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
