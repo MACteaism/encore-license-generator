@@ -1,4 +1,4 @@
-# Encore `.enclib` test licenses
+﻿# Encore `.enclib` test licenses
 
 This is the manual, no-server license flow for encrypted Encore packs. It keeps
 the pack file unchanged and keeps the full pack passphrase out of the APK.
@@ -10,6 +10,12 @@ key, so the license cannot be copied to another device. Passphrases longer than
 the RSA-OAEP limit are split into multiple encrypted chunks; this is transparent
 to the tester. Builds before versionCode 10 only understand a single chunk, so
 use the current build for packs with long passphrases (including the full pack).
+
+A hosted variant of the issuing UI runs on Vercel
+(https://encore-license-generator.vercel.app) for issuing without access to the
+signer's machine; see the repository README. The security model below applies
+to both — the hosted function holds the same signing key in Vercel's encrypted
+environment variables and gates issuing behind an admin token.
 
 > This is access control for a small public test, not DRM. During playback the
 > decrypted pack key exists in the app process. A rooted or instrumented device
@@ -120,7 +126,7 @@ For convenience, the owner can issue licenses from a browser without retyping
 the activation code or passphrase into a command line:
 
 ```powershell
-python tools/enclib_license_web.py
+python tools/main.py
 ```
 
 The tool binds only to `127.0.0.1` and opens
@@ -139,13 +145,13 @@ Useful options:
 
 ```powershell
 # Do not open a browser automatically
-python tools/enclib_license_web.py --no-browser
+python tools/main.py --no-browser
 
 # Use a different port (0 chooses a free port)
-python tools/enclib_license_web.py --port 8877
+python tools/main.py --port 8877
 
 # Use another pack/passphrase folder or signing key
-python tools/enclib_license_web.py `
+python tools/main.py `
   --pack-dir test-output `
   --passphrase-dir test-output `
   --key tools\keys\enclib-license-signing-key.pem
