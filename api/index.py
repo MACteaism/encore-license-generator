@@ -33,7 +33,7 @@ from pathlib import Path
 from flask import Flask, Response, request
 
 from tools import enclib_license as lic
-from tools.enclib_license_web import (
+from tools.main import (
     MAX_ACTIVATION_CHARS,
     MAX_PASSPHRASE_CHARS,
     LicenseError,
