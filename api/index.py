@@ -16,6 +16,11 @@ Configuration (environment variables, set in the Vercel dashboard or CLI):
 Public pack metadata lives in packs.json at the repo root (pack ID, song count,
 size). The signing key, passphrases, and admin token never enter git and are
 excluded from deployments via .vercelignore.
+
+The UI prompts for the admin token once per browser tab and sends it as the
+X-Admin-Token header; it is compared in constant time. A 401 clears the stored
+token so the next attempt re-prompts. Verified end-to-end against a real device:
+activation code -> serverless signing -> Android Keystore unwrap (2026-10-30).
 """
 from __future__ import annotations
 
