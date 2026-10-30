@@ -1,0 +1,6 @@
+# Never deploy local secrets or test data.
+tools/keys/
+*.pem
+test-output/
+.git/
+README.md
