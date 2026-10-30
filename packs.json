@@ -1,6 +1,12 @@
 {
     "packs":  [
                   {
+                      "name":  "EncoreSongPack-102026.enclib",
+                      "packId":  "3bafde72758315bdc0e64de46e5138cd",
+                      "songs":  44626,
+                      "size":  350324712
+                  },
+                  {
                       "name":  "Encore-Library.enclib",
                       "packId":  "ff188dafaa8e201b85dc3934927ccb95",
                       "songs":  44624,
@@ -16,7 +22,7 @@
     "passphrases":  [
                         {
                             "name":  "full-pack-passphrase-value",
-                            "note":  "Full library pack"
+                            "note":  "Full library packs (EncoreSongPack-102026, Encore-Library)"
                         },
                         {
                             "name":  "test-pack-passphrase",
