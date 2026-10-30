@@ -1,1 +1,26 @@
-{"packs": [{"name": "Encore-Library.enclib", "packId": "REPLACE_ME", "songs": 42, "size": 12368896}], "passphrases": [{"name": "full-pack-passphrase-value.txt", "note": "Full pack passphrase"}]}
+{
+    "packs":  [
+                  {
+                      "name":  "Encore-Library.enclib",
+                      "packId":  "ff188dafaa8e201b85dc3934927ccb95",
+                      "songs":  44624,
+                      "size":  350278344
+                  },
+                  {
+                      "name":  "test-10-renamed.enclib",
+                      "packId":  "db2a03b61738e52ea30e696f71ce1a3b",
+                      "songs":  10,
+                      "size":  72472
+                  }
+              ],
+    "passphrases":  [
+                        {
+                            "name":  "full-pack-passphrase-value",
+                            "note":  "Full library pack"
+                        },
+                        {
+                            "name":  "test-pack-passphrase",
+                            "note":  "Test 10-song pack"
+                        }
+                    ]
+}
