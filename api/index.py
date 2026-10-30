@@ -304,6 +304,7 @@ def _json(status: int, payload: dict) -> Response:
 
 
 @app.get("/")
+@app.get("/api/index")
 def page() -> Response:
     try:
         return Response(_serve_page(), status=200, content_type="text/html; charset=utf-8")
@@ -312,6 +313,7 @@ def page() -> Response:
 
 
 @app.post("/api/issue")
+@app.post("/api/index")
 def issue() -> Response:
     try:
         if not _admin_ok(request.headers.get("X-Admin-Token", "")):
