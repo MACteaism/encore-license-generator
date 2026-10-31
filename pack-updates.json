@@ -1,0 +1,13 @@
+{
+  "packs": {
+    "EncoreSongPack-102026.enclib": {
+      "packId": "3bafde72758315bdc0e64de46e5138cd",
+      "version": 1,
+      "size": 350324712,
+      "url": "https://github.com/MACteaism/Encore-Android/releases/download/v0.2.0-beta.12/EncoreSongPack-102026.enclib",
+      "notes": "October 2026 library - 44,626 songs",
+      "releasedAt": "2026-10-30"
+    }
+  },
+  "_updated": "2026-10-30T00:00:00Z"
+}

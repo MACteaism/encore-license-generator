@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import hashlib
 import hmac
 import io
 import json
@@ -59,9 +60,20 @@ class ApiError(Exception):
         self.message = message
 
 
+PACK_UPDATES_FILE = ROOT / "pack-updates.json"
+
+
 def _load_packs() -> dict:
     with PACKS_FILE.open(encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def _load_pack_updates() -> dict:
+    try:
+        with PACK_UPDATES_FILE.open(encoding="utf-8") as handle:
+            return json.load(handle)
+    except Exception:
+        return {"packs": {}, "_updated": ""}
 
 
 def _write_signing_key() -> Path:
@@ -84,6 +96,38 @@ def _admin_ok(supplied: str) -> bool:
     if not token:
         raise ApiError(500, "Admin token is not configured (ENCLIB_ADMIN_TOKEN).")
     return hmac.compare_digest(supplied or "", token)
+
+
+def _rate_limit_ok(activation_code: str) -> tuple[bool, int]:
+    """One license issue per activation code per ENCLIB_RATE_LIMIT_SECONDS.
+
+    File-backed so it survives Vercel cold starts on the same instance.
+    Returns (ok, retry_after_seconds).
+    """
+    limit_seconds = int(os.environ.get("ENCLIB_RATE_LIMIT_SECONDS", "300"))
+    limit_dir = Path(
+        os.environ.get("ENCLIB_RATE_LIMIT_DIR", "") or ROOT / "ratelimit"
+    )
+    limit_dir.mkdir(parents=True, exist_ok=True)
+    safe = hashlib.sha256(activation_code.encode("utf-8")).hexdigest()[:16]
+    state_file = limit_dir / f"{safe}.json"
+    now = int(datetime.now(timezone.utc).timestamp())
+    last_issue = 0
+    try:
+        data = json.loads(state_file.read_text(encoding="utf-8"))
+        last_issue = int(data.get("last_issue", 0))
+    except Exception:
+        pass
+    elapsed = now - last_issue
+    if elapsed < limit_seconds:
+        return False, limit_seconds - elapsed
+    try:
+        state_file.write_text(
+            json.dumps({"last_issue": now}), encoding="utf-8"
+        )
+    except Exception:
+        pass
+    return True, 0
 
 
 def _pack_stub(pack_id_hex: str) -> Path:
@@ -300,12 +344,16 @@ def _issue(body: dict) -> tuple[str, str, dict]:
     return license_text, pack_name, meta
 
 
-def _json(status: int, payload: dict) -> Response:
-    return Response(
+def _json(status: int, payload: dict, headers: dict | None = None) -> Response:
+    resp = Response(
         json.dumps(payload),
         status=status,
         content_type="application/json",
     )
+    if headers:
+        for key, value in headers.items():
+            resp.headers[key] = value
+    return resp
 
 
 @app.get("/")
@@ -315,6 +363,22 @@ def page() -> Response:
         return Response(_serve_page(), status=200, content_type="text/html; charset=utf-8")
     except ApiError as exc:
         return _json(exc.status, {"ok": False, "error": exc.message})
+
+
+@app.get("/api/pack-updates")
+def pack_updates() -> Response:
+    try:
+        data = _load_pack_updates()
+        resp = _json(200, {"ok": True, **data})
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return resp
+    except Exception:
+        traceback.print_exc()
+        resp = _json(500, {"ok": False, "error": "Could not load pack updates."})
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        return resp
 
 
 @app.post("/api/issue")
@@ -332,6 +396,17 @@ def issue() -> Response:
             return _json(400, {"ok": False, "error": "Request body must be JSON."})
         if not isinstance(body, dict):
             return _json(400, {"ok": False, "error": "Request body must be a JSON object."})
+        activation = str(body.get("activation", "") or "").strip()
+        ok, retry_after = _rate_limit_ok(activation)
+        if not ok:
+            return _json(
+                429,
+                {
+                    "ok": False,
+                    "error": f"Rate limited. Try again in {retry_after} seconds.",
+                },
+                headers={"Retry-After": str(retry_after)},
+            )
         license_text, pack_name, meta = _issue(body)
         return _json(
             200,
